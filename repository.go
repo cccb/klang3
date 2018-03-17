@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/exec"
 	"path"
 	"path/filepath"
 	"strings"
@@ -17,11 +18,53 @@ type Sample struct {
 	Group string
 
 	Metadata tag.Metadata
+
+	isPlaying bool
+	cmd       *exec.Cmd
+	err       error
+}
+
+func (self *Sample) Start() error {
+	self.cmd = exec.Command("aplay", self.Path)
+	err := self.cmd.Start()
+	if err != nil {
+		return err
+	}
+
+	self.isPlaying = true
+
+	// Wait until finished, reset state
+	go func() {
+		self.err = self.cmd.Wait()
+		if self.err != nil {
+			log.Println("Could not play sample:", self.err)
+		}
+
+		self.isPlaying = false
+	}()
+
+	return nil
+}
+
+func (self *Sample) Stop() error {
+	if self.isPlaying == false {
+		return fmt.Errorf("Sample not playing")
+	}
+
+	err := self.cmd.Process.Kill()
+	if err != nil {
+		log.Println("Could not kill player:", err)
+		return err
+	}
+
+	return nil
 }
 
 func (self *Sample) _makeTitle() {
-	if self.Metadata != nil && self.Metadata.Title() != "" {
+	if self.Metadata != nil && self.Metadata.Title() != "" && self.Metadata.Artist() != "" {
 		self.Title = fmt.Sprintf("%v (%v)", self.Metadata.Title(), self.Metadata.Artist())
+	} else if self.Metadata != nil && self.Metadata.Title() != "" {
+		self.Title = self.Metadata.Title()
 	} else {
 		self.Title = _stripSuffix(path.Base(self.Path))
 	}
@@ -118,16 +161,44 @@ func (self *Repository) Update() error {
 		self.samplesCache = append(self.samplesCache, sample)
 	}
 
-	// Sort sample cache by group and title
-
 	return nil
 }
 
-func (self *Repository) Samples() ([]*Sample, error) {
-	err := self.Update()
-	if err != nil {
-		return []*Sample{}, err
+func (self *Repository) _enumerateDuplicateTitles() {
+
+}
+
+func (self *Repository) Samples(group string) []*Sample {
+	samples := []*Sample{}
+
+	for _, s := range self.samplesCache {
+		if group == "" || group == "*" {
+			samples = append(samples, s)
+			continue
+		}
+
+		if s.Group == group {
+			samples = append(samples, s)
+		}
 	}
 
-	return self.samplesCache, nil
+	return samples
+}
+
+func (self *Repository) Groups() []string {
+	groups := []string{}
+	for _, s := range self.samplesCache {
+		hasGroup := false
+		for _, g := range groups {
+			if s.Group == g {
+				hasGroup = true
+				break
+			}
+		}
+		if !hasGroup {
+			groups = append(groups, s.Group)
+		}
+	}
+
+	return groups
 }

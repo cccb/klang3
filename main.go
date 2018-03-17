@@ -34,12 +34,17 @@ func main() {
 	}
 
 	repo := NewRepository(conf.Path)
-	samples, err := repo.Samples()
+	err := repo.Update()
 	if err != nil {
 		log.Fatal("Could not read samples from repository:", err)
 	}
 
-	for _, s := range samples {
-		log.Println(s.Title, "G:", s.Group)
+	for _, g := range repo.Groups() {
+		log.Println("Group:", g)
+
+		samples := repo.Samples(g)
+		for _, s := range samples {
+			log.Println(s.Title)
+		}
 	}
 }
