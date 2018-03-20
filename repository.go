@@ -13,9 +13,11 @@ import (
 )
 
 type Sample struct {
-	Path  string
-	Title string
-	Group string
+	Id int `json:"id"`
+
+	Path  string `json:"path"`
+	Title string `json:"title"`
+	Group string `json:"group"`
 
 	Metadata tag.Metadata
 
@@ -25,6 +27,8 @@ type Sample struct {
 }
 
 func (self *Sample) Start() error {
+	log.Println("Playing file:", self.Path)
+
 	self.cmd = exec.Command("aplay", self.Path)
 	err := self.cmd.Start()
 	if err != nil {
@@ -139,7 +143,7 @@ func (self *Repository) Update() error {
 
 	self.samplesCache = []*Sample{}
 
-	for _, filename := range files {
+	for id, filename := range files {
 		file, err := os.Open(filename)
 		defer file.Close()
 
@@ -152,6 +156,7 @@ func (self *Repository) Update() error {
 		meta, _ := tag.ReadFrom(file)
 
 		sample := &Sample{
+			Id:       id,
 			Path:     filename,
 			Metadata: meta,
 		}
@@ -201,4 +206,11 @@ func (self *Repository) Groups() []string {
 	}
 
 	return groups
+}
+
+func (self *Repository) GetSampleById(id int) *Sample {
+	if id >= len(self.samplesCache) {
+		return nil
+	}
+	return self.samplesCache[id]
 }

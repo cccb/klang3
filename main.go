@@ -4,6 +4,7 @@ import (
 	"flag"
 	"log"
 	"os"
+	"time"
 )
 
 type Config struct {
@@ -47,4 +48,5 @@ func main() {
 			log.Println(s.Title)
 		}
 	}
+
 }
