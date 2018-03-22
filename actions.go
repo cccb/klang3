@@ -105,7 +105,27 @@ func SampleStartSuccess(sampleId int) alpaca.Action {
 
 func SampleStartError(sampleId int, code int, err error) alpaca.Action {
 	return alpaca.Action{
-		Type: SAMPLE_START_SUCCESS,
+		Type: SAMPLE_START_ERROR,
+		Payload: SampleIdErrorPayload{
+			SampleId: sampleId,
+			Code:     code,
+			Message:  err.Error(),
+		},
+	}
+}
+
+func SampleStopSuccess(sampleId int) alpaca.Action {
+	return alpaca.Action{
+		Type: SAMPLE_STOP_SUCCESS,
+		Payload: SampleIdPayload{
+			SampleId: sampleId,
+		},
+	}
+}
+
+func SampleStopError(sampleId int, code int, err error) alpaca.Action {
+	return alpaca.Action{
+		Type: SAMPLE_STOP_ERROR,
 		Payload: SampleIdErrorPayload{
 			SampleId: sampleId,
 			Code:     code,

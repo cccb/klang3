@@ -4,22 +4,12 @@ import (
 	"flag"
 	"log"
 	"os"
+
+	"github.com/cameliot/alpaca"
+	"github.com/cameliot/alpaca/meta"
 )
 
-type Config struct {
-	Path string
-}
-
-func parseFlags() *Config {
-	pathFlag := flag.String("path", "", "Path to files")
-	flag.Parse()
-
-	conf := &Config{
-		Path: *pathFlag,
-	}
-
-	return conf
-}
+var version = "unknown"
 
 func usage() {
 	flag.PrintDefaults()
@@ -27,25 +17,50 @@ func usage() {
 }
 
 func main() {
-	conf := parseFlags()
+	log.Println("Starting klang3 v.", version)
 
-	if conf.Path == "" {
+	// Initialize configuration
+	config := parseFlags()
+
+	if config.RepoPath == "" {
 		usage()
 	}
 
-	repo := NewRepository(conf.Path)
+	// Initialize MQTT connection
+	actions, dispatch := alpaca.DialMqtt(
+		config.Mqtt.BrokerUri(),
+		alpaca.Routes{
+			"sampler": config.Mqtt.BaseTopic,
+			"meta":    "v1/_meta",
+		},
+	)
+
+	// Initialize repository
+	repo := NewRepository(config.RepoPath)
 	err := repo.Update()
 	if err != nil {
 		log.Fatal("Could not read samples from repository:", err)
 	}
 
-	for _, g := range repo.Groups() {
-		log.Println("Group:", g)
+	samplerActions := make(alpaca.Actions)
+	metaActions := make(alpaca.Actions)
 
-		samples := repo.Samples(g)
-		for _, s := range samples {
-			log.Println(s.Title)
-		}
+	// Initialize Soundboard Service
+	samplerSvc := NewSamplerSvc(repo)
+	go samplerSvc.Handle(samplerActions, dispatch)
+
+	// Hanlde meta actions for service discovery
+	metaSvc := meta.NewMetaSvc(
+		"sampler@mainhall",
+		"klang3",
+		version,
+		"Klang3 MQTT SoundBoard",
+	)
+	go metaSvc.Handle(metaActions, dispatch)
+
+	for action := range actions {
+		samplerActions <- action
+		metaActions <- action
 	}
 
 }

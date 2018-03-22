@@ -173,6 +173,10 @@ func (self *Repository) _enumerateDuplicateTitles() {
 
 }
 
+func (self *Repository) AllSamples() []*Sample {
+	return self.samplesCache
+}
+
 func (self *Repository) Samples(group string) []*Sample {
 	samples := []*Sample{}
 

@@ -2,6 +2,8 @@ package main
 
 import (
 	"github.com/cameliot/alpaca"
+
+	"fmt"
 )
 
 type SamplerSvc struct {
@@ -28,6 +30,42 @@ func (self *SamplerSvc) handleSamplesListRequest(request *SamplesListPayload) al
 	return SamplesListSuccess(request.Group, samples)
 }
 
+func (self *SamplerSvc) handleSampleStartRequest(request *SampleIdPayload) alpaca.Action {
+	sample := self.repo.GetSampleById(request.SampleId)
+	if sample == nil {
+		return SampleStartError(request.SampleId, 404, fmt.Errorf("Sample not found"))
+	}
+
+	// Stop all samples (just in case)
+	for _, sample := range self.repo.AllSamples() {
+		sample.Stop() // Just stop do not care
+	}
+
+	// Start playback
+	sample.Start()
+
+	return SampleStartSuccess(sample.Id)
+}
+
+func (self *SamplerSvc) handleSampleStopRequest(request *SampleIdPayload) alpaca.Action {
+	if request.SampleId == 0 {
+		for _, sample := range self.repo.AllSamples() {
+			sample.Stop() // Just stop do not care
+		}
+
+		return SampleStopSuccess(0)
+	}
+
+	sample := self.repo.GetSampleById(request.SampleId)
+	if sample == nil {
+		return SampleStopError(0, 404, fmt.Errorf("Sample not found"))
+	}
+
+	sample.Stop()
+
+	return SampleStopSuccess(sample.Id)
+}
+
 func (self *SamplerSvc) Handle(actions alpaca.Actions, dispatch alpaca.Dispatch) {
 
 	for action := range actions {
@@ -40,6 +78,18 @@ func (self *SamplerSvc) Handle(actions alpaca.Actions, dispatch alpaca.Dispatch)
 			var request SamplesListPayload
 			action.DecodePayload(&request)
 			dispatch(self.handleSamplesListRequest(&request))
+			break
+
+		case SAMPLE_START_REQUEST:
+			var request SampleIdPayload
+			action.DecodePayload(&request)
+			dispatch(self.handleSampleStartRequest(&request))
+			break
+
+		case SAMPLE_STOP_REQUEST:
+			var request SampleIdPayload
+			action.DecodePayload(&request)
+			dispatch(self.handleSampleStopRequest(&request))
 			break
 		}
 	}
