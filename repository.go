@@ -26,28 +26,35 @@ type Sample struct {
 	err       error
 }
 
-func (self *Sample) Start() error {
+func (self *Sample) Start() (chan bool, error) {
+	// Make stopped callback channel
+	done := make(chan bool, 1)
+
 	log.Println("Playing file:", self.Path)
 
+	// Start playback
 	self.cmd = exec.Command("aplay", self.Path)
 	err := self.cmd.Start()
 	if err != nil {
-		return err
+		done <- false
+		return done, err
 	}
 
 	self.isPlaying = true
 
-	// Wait until finished, reset state
 	go func() {
+		// Wait until finished, reset state
 		self.err = self.cmd.Wait()
 		if self.err != nil {
 			log.Println("Could not play sample:", self.err)
 		}
 
 		self.isPlaying = false
+
+		done <- true
 	}()
 
-	return nil
+	return done, nil
 }
 
 func (self *Sample) Stop() error {
