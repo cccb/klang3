@@ -1,0 +1,14 @@
+[Unit]
+Description=Klang3 Sampler
+Wants=network.target
+After=network.target
+
+[Service]
+Type=simple
+User=root
+ExecStart=/usr/bin/klang3 -host mqtt.club.berlin.ccc.de:1883 -path /var/ansagen -topic v1/mainhall/sampler
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
