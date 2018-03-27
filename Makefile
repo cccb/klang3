@@ -31,3 +31,6 @@ osx:
 linux: 
 	GOARCH=$(ARCH) GOOS=linux go build $(LDFLAGS) -o $(PROG)
 
+raspi:
+	GOARCH=arm GOARM=5 GOOS=linux go build $(LDFLAGS) -o $(PROG)
+
