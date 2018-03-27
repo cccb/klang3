@@ -19,7 +19,7 @@ type Sample struct {
 	Title string `json:"title"`
 	Group string `json:"group"`
 
-	Metadata tag.Metadata
+	Metadata tag.Metadata `json:"-"`
 
 	isPlaying bool
 	cmd       *exec.Cmd
