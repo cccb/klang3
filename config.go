@@ -32,12 +32,14 @@ func (config MqttConfig) BrokerUri() string {
 type Config struct {
 	Mqtt     *MqttConfig
 	RepoPath string
+	PlayCmd  string
 }
 
 func parseFlags() *Config {
 	repo := flag.String("path", "", "Path to files")
 	host := flag.String("host", "localhost:1883", "MQTT broker host")
 	user := flag.String("user", "", "MQTT broker host")
+	cmd := flag.String("cmd", "mpv", "Play sound using this command")
 	password := flag.String("password", "", "MQTT broker host")
 	baseTopic := flag.String("topic", "klang3", "MQTT base topic")
 
@@ -54,6 +56,7 @@ func parseFlags() *Config {
 	config := &Config{
 		Mqtt:     mqttConfig,
 		RepoPath: *repo,
+		PlayCmd:  *cmd,
 	}
 
 	return config

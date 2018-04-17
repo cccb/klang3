@@ -46,7 +46,7 @@ func main() {
 	metaActions := make(alpaca.Actions)
 
 	// Initialize Soundboard Service
-	samplerSvc := NewSamplerSvc(repo)
+	samplerSvc := NewSamplerSvc(config.PlayCmd, repo)
 	go samplerSvc.Handle(samplerActions, dispatch)
 
 	// Hanlde meta actions for service discovery

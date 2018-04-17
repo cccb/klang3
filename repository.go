@@ -26,14 +26,14 @@ type Sample struct {
 	err       error
 }
 
-func (self *Sample) Start() (chan bool, error) {
+func (self *Sample) Start(playCmd string) (chan bool, error) {
 	// Make stopped callback channel
 	done := make(chan bool, 1)
 
 	log.Println("Playing file:", self.Path)
 
 	// Start playback
-	self.cmd = exec.Command("aplay", self.Path)
+	self.cmd = exec.Command(playCmd, self.Path)
 	err := self.cmd.Start()
 	if err != nil {
 		done <- false

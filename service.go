@@ -7,12 +7,14 @@ import (
 )
 
 type SamplerSvc struct {
-	repo *Repository
+	repo    *Repository
+	playCmd string
 }
 
-func NewSamplerSvc(repository *Repository) *SamplerSvc {
+func NewSamplerSvc(playCmd string, repository *Repository) *SamplerSvc {
 	svc := &SamplerSvc{
-		repo: repository,
+		repo:    repository,
+		playCmd: playCmd,
 	}
 
 	return svc
@@ -37,7 +39,7 @@ func (self *SamplerSvc) handleSampleStartRequest(dispatch alpaca.Dispatch, reque
 	}
 
 	// Start playback
-	done, err := sample.Start()
+	done, err := sample.Start(self.playCmd)
 	if err != nil {
 		return SampleStartError(request.SampleId, 501, err)
 	}
